@@ -54,6 +54,7 @@ contract Raffle is VRFConsumerBaseV2, KeeperCompatibleInterface {
         i_callbackGasLimit = callbackGasLimit;
         s_raffleState = RaffleState.OPEN;
         i_interval = interval;
+        s_lastTimestamp = block.timestamp;
     }
 
     function enterRaffle() public payable {
@@ -108,6 +109,8 @@ contract Raffle is VRFConsumerBaseV2, KeeperCompatibleInterface {
             );
         }
         s_raffleState = RaffleState.CALCULATING;
+
+        // Request random words to Chainlink VRF
         uint256 requestId = i_vrfCoordinator.requestRandomWords(
             i_gasLane,
             i_subscripionId,
@@ -176,5 +179,9 @@ contract Raffle is VRFConsumerBaseV2, KeeperCompatibleInterface {
 
     function getNumberOfPlayers() public view returns (uint256) {
         return s_players.length;
+    }
+
+    function getBlockTimestamp() public view returns (uint256) {
+        return block.timestamp;
     }
 }

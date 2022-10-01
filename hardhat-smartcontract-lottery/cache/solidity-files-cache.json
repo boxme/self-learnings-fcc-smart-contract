@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/Users/honsie/blockchain/learnings-fcc/hardhat-smartcontract-lottery/contracts/Raffle.sol": {
-      "lastModificationDate": 1664096901237,
-      "contentHash": "e0f60c794249744619496bb2c929f041",
+      "lastModificationDate": 1664593629897,
+      "contentHash": "2172fd5234fab80382854c7a013830d9",
       "sourceName": "contracts/Raffle.sol",
       "solcConfig": {
         "version": "0.8.17",
