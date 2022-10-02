@@ -119,6 +119,7 @@ const { developmentChains, networkConfig } = require("../../helper-hardhat-confi
                   //   await network.provider.request({ method: "evm_mine", params: [] });
                   await network.provider.send("evm_mine", []);
 
+                  // "0x" is for empty byte. [] works too.
                   const { upkeepNeeded } = await raffle.callStatic.checkUpkeep("0x");
                   assert(!upkeepNeeded);
               });
@@ -156,6 +157,7 @@ const { developmentChains, networkConfig } = require("../../helper-hardhat-confi
                   const txReceipt = await txResponse.wait(1); // waits 1 block
                   console.log(txReceipt);
                   const raffleState = await raffle.getRaffleState(); // updates state
+                  // Check for the 2nd event because vrf coordinator will emit an event itself first.
                   const requestId = txReceipt.events[1].args.requestId;
                   assert(requestId.toNumber() > 0);
                   assert(raffleState == 1); // 0 = open, 1 = calculating
