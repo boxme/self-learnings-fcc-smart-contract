@@ -11,13 +11,14 @@ async function main() {
     console.log(`LendingPool address ${lendingPool.address}`);
 
     const wethTokenAddress = networkConfig[network.config.chainId].wethToken;
-    await approveErc20(wethTokenAddress, lendingPoolAddress, AMOUNT, deployer);
+    await approveErc20(wethTokenAddress, lendingPool.address, AMOUNT, deployer);
     console.log("Depositing ETH..");
     await lendingPool.deposit(wethTokenAddress, AMOUNT, deployer, 0);
     console.log("Deposited");
 
     // Get your borrowing stats
     const { availableBorrowsETH, totalDebtETH } = await getBorrowUserData(lendingPool, deployer);
+    const daiPrice = await getDaiPrice();
 }
 
 async function getLendingPool(account) {
@@ -48,6 +49,16 @@ async function getBorrowUserData(lendingPool, account) {
     console.log(`You can borrow ${availableBorrowsETH} worth of ETH.`);
 
     return { availableBorrowsETH, totalDebtETH };
+}
+
+async function getDaiPrice() {
+    const daiEthPriceFeed = await ethers.getContractAt(
+        "AggregatorV3Interface",
+        networkConfig[network.config.chainId].daiEthPriceFeed
+    );
+    const price = (await daiEthPriceFeed.latestRoundData())[1];
+    console.log(`The DAI/ETH price is ${price.toString()}`);
+    return price;
 }
 
 main()
