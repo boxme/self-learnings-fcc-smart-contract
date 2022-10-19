@@ -1,6 +1,7 @@
 const { network } = require("hardhat");
 const { networkConfig, developmentChains } = require("../helper-hardhat-config");
 const { storeImages, storeTokenUriMetadata } = require("../utils/uploadToPinata");
+const { verify } = require("../utils/verify");
 
 const imagesLocation = "./images/randomNft/";
 const metadataTemplate = {
@@ -14,11 +15,8 @@ const metadataTemplate = {
         },
     ],
 };
-let tokenUris = [
-    "ipfs://QmaVkBn2tKmjbhphU7eyztbvSQU5EXDdqRyXZtRhSGgJGo",
-    "ipfs://QmYQC5aGZu2PTH8XzbJrbDnvhj3gVs7ya33H9mqUNvST3d",
-    "ipfs://QmZYmH5iDbD6v3U2ixoVAjioSzvWJszDzYdbeCLquGSpVm",
-];
+
+const FUND_AMOUNT = "1000000000000000000000";
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy, log } = deployments;
@@ -38,21 +36,49 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         const txnResponse = await vrfCoordinatorV2Mock.createSubscription();
         const txnReceipt = await txnResponse.wait();
         subscriptionId = txnReceipt.events[0].args.subId;
+
+        // Fund the subscription
+        // Our mock makes it so we don't actually have to worry about sending fund
+        await vrfCoordinatorV2Mock.fundSubscription(subscriptionId, FUND_AMOUNT);
     } else {
         vrfCoordinatorV2Address = networkConfig[chainId].vrfCoordinatorV2;
         subscriptionId = networkConfig[chainId].subscriptionId;
     }
     log("----------------------------------------------------");
+    let tokenUris;
     if (process.env.UPLOAD_TO_PINATA == "true") {
         tokenUris = await handleTokenUris();
+    } else {
+        tokenUris = [
+            "ipfs://QmaVkBn2tKmjbhphU7eyztbvSQU5EXDdqRyXZtRhSGgJGo",
+            "ipfs://QmYQC5aGZu2PTH8XzbJrbDnvhj3gVs7ya33H9mqUNvST3d",
+            "ipfs://QmZYmH5iDbD6v3U2ixoVAjioSzvWJszDzYdbeCLquGSpVm",
+        ];
     }
-    // const args = [
-    //     vrfCoordinatorV2Address,
-    //     networkConfig[chainId].gasLane,
-    //     subscriptionId,
-    //     networkConfig[chainId].mintFee,
-    //     networkConfig[chainId].callbackGasLimit,
-    // ];
+    const args = [
+        vrfCoordinatorV2Address,
+        networkConfig[chainId].gasLane,
+        subscriptionId,
+        networkConfig[chainId].mintFee,
+        networkConfig[chainId].callbackGasLimit,
+        tokenUris,
+    ];
+    const randomIpfsNft = await deploy("RandomIpfsNft", {
+        from: deployer,
+        args: args,
+        log: true,
+        waitConfirmations: network.config.blockConfirmations || 1,
+    });
+
+    if (chainId == 31337) {
+        console.log("Add comsumer to vrfCoordinatorV2Mock");
+        console.log(subscriptionId.toString());
+        await vrfCoordinatorV2Mock.addConsumer(subscriptionId, randomIpfsNft.address);
+    }
+
+    if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
+        await verify(randomIpfsNft.address, args);
+    }
 };
 
 async function handleTokenUris() {

@@ -81,6 +81,7 @@ contract RandomIpfsNft is VRFConsumerBaseV2, ERC721URIStorage {
     function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords) internal override {
         address dogOwner = s_requestIdToSender[requestId];
         uint256 newTokenId = s_tokenCounter;
+        s_tokenCounter += 1;
         uint256 moddedRng = randomWords[0] % MAX_CHANCE_VALUE;
         Breed dogBreed = getBreedFromModdedRng(moddedRng);
         _safeMint(dogOwner, newTokenId);
@@ -91,7 +92,8 @@ contract RandomIpfsNft is VRFConsumerBaseV2, ERC721URIStorage {
         emit NftMinted(dogBreed, dogOwner);
     }
 
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {}
+    // No need to override this because ERC721URIStorage does it for us
+    // function tokenURI(uint256 tokenId) public view override returns (string memory) {}
 
     function getBreedFromModdedRng(uint256 moddedRng) public pure returns (Breed) {
         uint256 cumulativeSum = 0;
@@ -143,5 +145,9 @@ contract RandomIpfsNft is VRFConsumerBaseV2, ERC721URIStorage {
 
     function getInitialized() public view returns (bool) {
         return s_initialized;
+    }
+
+    function getTokenCounter() public view returns (uint256) {
+        return s_tokenCounter;
     }
 }
