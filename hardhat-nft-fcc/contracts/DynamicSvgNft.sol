@@ -57,7 +57,7 @@ contract DynamicSvgNft is ERC721 {
             imageURI = s_highImageUri;
         }
 
-        // Encodes JSON payload
+        // Encodes a token URI metadata JSON
         return
             string(
                 abi.encodePacked(
