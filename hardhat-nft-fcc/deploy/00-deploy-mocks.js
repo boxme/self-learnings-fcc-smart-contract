@@ -17,6 +17,12 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             args: [BASE_FEE, GAS_PRICE_LINK], // params for VRFCoordinatorV2Mock constructor.
         });
 
+        await deploy("MockV3Aggregator", {
+            from: deployer,
+            log: true,
+            args: [DECIMALS, INITIAL_PRICE],
+        });
+
         log("Mocks Deployed!");
         log("----------------------------------------------------------");
         log(
