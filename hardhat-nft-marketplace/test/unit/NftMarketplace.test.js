@@ -22,10 +22,12 @@ const { developmentChains } = require("../../helper-hardhat-config");
 
               basicNftContract = await ethers.getContract("BasicNft");
               // Reconnect to a different signer or provider
-              basicNft = await basicNftContract.connect(user);
+              basicNft = await basicNftContract.connect(deployer);
 
               await basicNft.mintNft();
-              await basicNft.approva(nftMarketplaceContract.address, TOKEN_ID);
+              // NFT must approve marketplace to transact for it. Doing this is we can avoid
+              // transferring ownership of NFT to marketplace
+              await basicNft.approve(nftMarketplaceContract.address, TOKEN_ID);
           });
 
           describe("listItem", async () => {
@@ -33,6 +35,33 @@ const { developmentChains } = require("../../helper-hardhat-config");
                   expect(await nftMarketplace.listItem(basicNft.address, TOKEN_ID, PRICE)).to.emit(
                       "ItemListed"
                   );
+              });
+              it("exclusively items that haven't been listed", async () => {
+                  await nftMarketplace.listItem(basicNft.address, TOKEN_ID, PRICE);
+
+                  // await has to be outside expect() https://ethereum.stackexchange.com/questions/123391/testing-for-custom-error-reverts-in-hardhat
+                  await expect(
+                      nftMarketplace.listItem(basicNft.address, TOKEN_ID, PRICE)
+                  ).to.be.revertedWith("NftMarketplace__AlreadyListed");
+              });
+              it("exclusively allows owners to list", async () => {
+                  nftMarketplace = nftMarketplace.connect(user);
+                  await basicNft.approve(user.address, TOKEN_ID);
+                  await expect(
+                      nftMarketplace.listItem(basicNft.address, TOKEN_ID, PRICE)
+                  ).to.be.revertedWith("NftMarketplace__NotOwner");
+              });
+              it("needs approval to list items", async () => {
+                  await basicNft.approve(ethers.constants.AddressZero, TOKEN_ID);
+                  await expect(
+                      nftMarketplace.listItem(basicNft.address, TOKEN_ID, PRICE)
+                  ).to.be.revertedWith("NftMarketplace__NotApprovedForMarketplace");
+              });
+              it("updates listing with seller and price", async () => {
+                  await nftMarketplace.listItem(basicNft.address, TOKEN_ID, PRICE);
+                  const listing = await nftMarketplace.getListing(basicNft.address, TOKEN_ID);
+                  assert(listing.price.toString() == PRICE.toString());
+                  assert(listing.seller.toString() == deployer.address);
               });
           });
       });
