@@ -5,7 +5,7 @@ const verify = async (contractAddress, args) => {
 
     try {
         await run("verify:verify", {
-            address: contractAddress.address,
+            address: contractAddress,
             constructorArguments: args,
         });
     } catch (e) {
