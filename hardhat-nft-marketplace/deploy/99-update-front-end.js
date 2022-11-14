@@ -1,5 +1,5 @@
 const { ethers, network } = require("hardhat");
-const { fs } = require("fs");
+// const { fs } = require("fs");
 
 const frontEndContractsFile = "../nextjs-nft-marketplace-fcc-moralis/constants/networkMapping.json";
 
@@ -13,6 +13,7 @@ module.exports = async function () {
 async function updateContractAddress() {
     const nftMarketplace = await ethers.getContract("NftMarketplace");
     const chainId = network.config.chainId.toString();
+    var fs = require("fs");
     const contractAddresses = JSON.parse(fs.readFileSync(frontEndContractsFile, "utf8"));
     if (chainId in contractAddresses) {
         if (!contractAddresses[chainId]["NftMarketplace"].includes(nftMarketplace.address)) {
